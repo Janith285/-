@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="si" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>කුරුඳු සහ පොල් ව්‍යාපාර මුල්‍ය කළමනාකරණය</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cinnamon: {
+                            50: '#fdf8f6',
+                            100: '#f2e8e5',
+                            500: '#8c4830',
+                            600: '#753924',
+                            700: '#5e2c1a',
+                        },
+                        coconut: {
+                            50: '#f4f8f3',
+                            100: '#e3eee1',
+                            500: '#386641',
+                            600: '#2c5234',
+                            700: '#203d26',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="h-full text-slate-800 antialiased flex flex-col font-sans">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-gradient-to-r from-coconut-700 via-coconut-600 to-cinnamon-700 text-white shadow-md sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap justify-between items-center gap-3">
+            <div class="flex items-center space-x-3">
+                <div class="p-2 bg-white/10 rounded-xl backdrop-blur-sm">
+                    <i class="fa-solid fa-tree text-2xl text-emerald-300"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg sm:text-xl font-bold tracking-wide">කුරුඳු සහ පොල් ව්‍යාපාරික ගිණුම් පද්ධතිය</h1>
+                    <p class="text-xs text-emerald-100 hidden sm:block">ආදායම්, වියදම්, ලාභ සහ ගනුදෙනු සංස්කරණ පද්ධතිය</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <button onclick="resetToSampleData()" class="px-3 py-1.5 text-xs bg-white/10 hover:bg-white/20 transition rounded-lg border border-white/20 flex items-center gap-1.5">
+                    <i class="fa-solid fa-rotate-right"></i> Sample Data
+                </button>
+                <button onclick="clearAllData()" class="px-3 py-1.5 text-xs bg-red-500/30 hover:bg-red-500/50 transition text-red-100 rounded-lg border border-red-300/30 flex items-center gap-1.5">
+                    <i class="fa-solid fa-trash-can"></i> සියල්ල මකන්න
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- Business Filter Tabs -->
+        <div class="bg-white p-2 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap gap-2 justify-between items-center">
+            <div class="flex gap-1.5 w-full sm:w-auto">
+                <button id="filter-all" onclick="setBusinessFilter('ALL')" class="flex-1 sm:flex-initial px-4 py-2 rounded-xl text-sm font-semibold transition bg-slate-800 text-white shadow-sm">
+                    <i class="fa-solid fa-layer-group me-1.5"></i> සියලු ව්‍යාපාර
+                </button>
+                <button id="filter-cinnamon" onclick="setBusinessFilter('CINNAMON')" class="flex-1 sm:flex-initial px-4 py-2 rounded-xl text-sm font-semibold transition bg-slate-100 text-slate-600 hover:bg-cinnamon-50 hover:text-cinnamon-700">
+                    <i class="fa-solid fa-leaf me-1.5 text-cinnamon-600"></i> කුරුඳු ව්‍යාපාරය
+                </button>
+                <button id="filter-coconut" onclick="setBusinessFilter('COCONUT')" class="flex-1 sm:flex-initial px-4 py-2 rounded-xl text-sm font-semibold transition bg-slate-100 text-slate-600 hover:bg-coconut-50 hover:text-coconut-700">
+                    <i class="fa-solid fa-utensils me-1.5 text-coconut-600"></i> පොල් සහ උප-නිෂ්පාදන
+                </button>
+            </div>
+
+            <div class="text-xs text-slate-500 font-medium px-2 py-1 bg-slate-50 rounded-lg border border-slate-100 w-full sm:w-auto text-center">
+                වත්මන් පෙන්වන්නේ: <span id="current-filter-text" class="font-bold text-slate-700">සියලුම ගනුදෙනු</span>
+            </div>
+        </div>
+
+        <!-- Metric KPI Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Total Income Card -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">මුළු ආදායම (Revenue)</p>
+                        <h3 id="card-income" class="text-2xl font-bold text-emerald-600 mt-1">රු. 0.00</h3>
+                    </div>
+                    <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                        <i class="fa-solid fa-arrow-down-left text-xl"></i>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-400 mt-3 flex items-center gap-1">
+                    <i class="fa-solid fa-circle-check text-emerald-500"></i> එකතු වූ සියලුම ආදායම්
+                </p>
+            </div>
+
+            <!-- Total Expenses Card -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">මුළු වියදම (Expenses)</p>
+                        <h3 id="card-expense" class="text-2xl font-bold text-rose-600 mt-1">රු. 0.00</h3>
+                    </div>
+                    <div class="p-3 bg-rose-50 text-rose-600 rounded-xl">
+                        <i class="fa-solid fa-arrow-up-right text-xl"></i>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-400 mt-3 flex items-center gap-1">
+                    <i class="fa-solid fa-circle-minus text-rose-400"></i> කූලි, අමුද්‍රව්‍ය හා ප්‍රවාහන
+                </p>
+            </div>
+
+            <!-- Net Profit Card -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">ශුද්ධ ලාභය (Net Profit)</p>
+                        <h3 id="card-profit" class="text-2xl font-bold text-slate-800 mt-1">රු. 0.00</h3>
+                    </div>
+                    <div id="profit-icon-bg" class="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                        <i class="fa-solid fa-wallet text-xl"></i>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-400 mt-3 flex items-center gap-1">
+                    <i class="fa-solid fa-calculator"></i> (ආදායම - වියදම)
+                </p>
+            </div>
+
+            <!-- Profit Margin Card -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">ලාභ ප්‍රතිශතය (Profit Margin)</p>
+                        <h3 id="card-margin" class="text-2xl font-bold text-indigo-600 mt-1">0.0%</h3>
+                    </div>
+                    <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+                        <i class="fa-solid fa-chart-line text-xl"></i>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-400 mt-3 flex items-center gap-1">
+                    <i class="fa-solid fa-percent"></i> මුළු ආදායමෙන් ලාභ %
+                </p>
+            </div>
+        </div>
+
+        <!-- Form and Charts Section Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- Transaction Input Form (5 Cols) -->
+            <div class="lg:col-span-5 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm h-fit">
+                <div class="flex justify-between items-center border-b border-slate-100 pb-4 mb-4">
+                    <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-square-plus text-emerald-600"></i> ගනුදෙනුවක් ඇතුළත් කිරීම
+                    </h2>
+                    <!-- Income / Expense Toggle -->
+                    <div class="bg-slate-100 p-1 rounded-xl flex text-xs font-semibold">
+                        <button type="button" id="type-income-btn" onclick="setTransactionType('INCOME')" class="px-3 py-1.5 rounded-lg transition bg-emerald-600 text-white shadow-sm">
+                            ආදායම් (+)
+                        </button>
+                        <button type="button" id="type-expense-btn" onclick="setTransactionType('EXPENSE')" class="px-3 py-1.5 rounded-lg transition text-slate-600 hover:text-slate-900">
+                            වියදම් (-)
+                        </button>
+                    </div>
+                </div>
+
+                <form id="transaction-form" onsubmit="handleFormSubmit(event)" class="space-y-4">
+                    <!-- Hidden field for type -->
+                    <input type="hidden" id="form-type" value="INCOME">
+
+                    <!-- Date & Business Type -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">දිනය</label>
+                            <input type="date" id="form-date" required class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">ව්‍යාපාරික අංශය</label>
+                            <select id="form-business" onchange="updateCategoryOptions()" required class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm bg-white">
+                                <option value="COCONUT">පොල් සහ උප-නිෂ්පාදන</option>
+                                <option value="CINNAMON">කුරුඳු ව්‍යාපාරය</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Category Dropdown -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">වර්ගීකරණය (Category)</label>
+                        <select id="form-category" required class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm bg-white">
+                            <!-- Dynamic options populated by JS -->
+                        </select>
+                    </div>
+
+                    <!-- Amount & Quantity -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">මුදල (රු. LKR)</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-2.5 text-xs text-slate-400 font-bold">රු.</span>
+                                <input type="number" id="form-amount" step="0.01" min="0.01" placeholder="0.00" required class="w-full pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm font-semibold">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">ප්‍රමාණය (Optional)</label>
+                            <input type="text" id="form-quantity" placeholder="උදා: 500 kg / 1200 ගෙඩි" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
+                        </div>
+                    </div>
+
+                    <!-- Note / Description -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">සටහන / විස්තරය (Description)</label>
+                        <textarea id="form-note" rows="2" placeholder="උදා: පෑලියගොඩ වෙළෙන්ඳාට කොප්පරා විකිණීම..." class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm resize-none"></textarea>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" id="form-submit-btn" class="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-md shadow-emerald-600/20 transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-plus"></i> එකතු කරන්න
+                    </button>
+                </form>
+            </div>
+
+            <!-- Charts Column (7 Cols) -->
+            <div class="lg:col-span-7 space-y-6">
+                <!-- Chart 1: Category Breakdown -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-pie text-indigo-500"></i> ආදායම් වර්ගීකරණය (Category Breakdown)
+                        </h3>
+                        <span class="text-xs text-slate-400">අංශය අනුව</span>
+                    </div>
+                    <div class="relative h-56 sm:h-64 flex justify-center items-center">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 2: Revenue vs Expense Bar -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-column text-emerald-500"></i> ආදායම් සහ වියදම් සැසඳීම
+                        </h3>
+                        <span class="text-xs text-slate-400">එකතුව</span>
+                    </div>
+                    <div class="relative h-48 sm:h-52">
+                        <canvas id="comparisonChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Transactions Table Section -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <!-- Table Header Bar -->
+            <div class="p-4 sm:p-5 border-b border-slate-100 flex flex-wrap gap-3 justify-between items-center bg-slate-50/50">
+                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-slate-600"></i> ගනුදෙනු ලැයිස්තුව (Transaction History)
+                </h3>
+
+                <!-- Search and Filters -->
+                <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                    <!-- Search input -->
+                    <div class="relative flex-1 sm:w-48">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-400"></i>
+                        <input type="text" id="search-input" oninput="renderApp()" placeholder="සොයන්න..." class="w-full pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <!-- Type Filter -->
+                    <select id="type-filter" onchange="renderApp()" class="px-3 py-1.5 rounded-xl border border-slate-200 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <option value="ALL">සියලු වර්ග (All)</option>
+                        <option value="INCOME">ආදායම් පමණක්</option>
+                        <option value="EXPENSE">වියදම් පමණක්</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Responsive Table -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                    <thead>
+                        <tr class="bg-slate-100/70 text-slate-600 font-semibold border-b border-slate-200">
+                            <th class="py-3 px-4">දිනය</th>
+                            <th class="py-3 px-4">ව්‍යාපාරය</th>
+                            <th class="py-3 px-4">වර්ගීකරණය</th>
+                            <th class="py-3 px-4">ප්‍රමාණය</th>
+                            <th class="py-3 px-4">සටහන</th>
+                            <th class="py-3 px-4 text-right">මුදල (රු.)</th>
+                            <th class="py-3 px-4 text-center">ක්‍රියාකාරකම්</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactions-table-body" class="divide-y divide-slate-100">
+                        <!-- Dynamic Rows loaded via JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Empty State -->
+            <div id="empty-state" class="hidden p-8 text-center">
+                <i class="fa-solid fa-folder-open text-4xl text-slate-300 mb-2"></i>
+                <p class="text-sm font-medium text-slate-500">ගනුදෙනු කිසිවක් හමු නොවීය.</p>
+                <p class="text-xs text-slate-400 mt-1">ඉහත Form එක භාවිතයෙන් අලුත් ගනුදෙනුවක් ඇතුළත් කරන්න.</p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- EDIT TRANSACTION MODAL DIALOG -->
+    <div id="edit-modal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl border border-slate-200 overflow-hidden transform transition-all my-8">
+            <div class="p-4 sm:p-5 bg-gradient-to-r from-slate-800 to-slate-700 text-white flex justify-between items-center">
+                <h3 class="text-base font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-emerald-400"></i> ගනුදෙනුව සංස්කරණය (Edit Transaction)
+                </h3>
+                <button onclick="closeEditModal()" class="text-slate-300 hover:text-white text-lg px-2">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="edit-form" onsubmit="handleEditSubmit(event)" class="p-5 space-y-4">
+                <input type="hidden" id="edit-id">
+
+                <!-- Type Selector -->
+                <div class="flex justify-between items-center bg-slate-100 p-1.5 rounded-xl">
+                    <span class="text-xs font-semibold text-slate-600 px-2">වර්ගය:</span>
+                    <div class="flex gap-1 text-xs font-semibold">
+                        <button type="button" id="edit-type-income-btn" onclick="setEditTransactionType('INCOME')" class="px-3 py-1.5 rounded-lg transition">ආදායම් (+)</button>
+                        <button type="button" id="edit-type-expense-btn" onclick="setEditTransactionType('EXPENSE')" class="px-3 py-1.5 rounded-lg transition">වියදම් (-)</button>
+                    </div>
+                </div>
+                <input type="hidden" id="edit-type" value="INCOME">
+
+                <!-- Date & Business -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">දිනය</label>
+                        <input type="date" id="edit-date" required class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">ව්‍යාපාරික අංශය</label>
+                        <select id="edit-business" onchange="updateEditCategoryOptions()" required class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm bg-white">
+                            <option value="COCONUT">පොල් සහ උප-නිෂ්පාදන</option>
+                            <option value="CINNAMON">කුරුඳු ව්‍යාපාරය</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Category -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">වර්ගීකරණය (Category)</label>
+                    <select id="edit-category" required class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm bg-white">
+                    </select>
+                </div>
+
+                <!-- Amount & Quantity -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">මුදල (රු. LKR)</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-2.5 text-xs text-slate-400 font-bold">රු.</span>
+                            <input type="number" id="edit-amount" step="0.01" min="0.01" required class="w-full pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm font-semibold">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">ප්‍රමාණය (Optional)</label>
+                        <input type="text" id="edit-quantity" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
+                    </div>
+                </div>
+
+                <!-- Note -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">සටහන / විස්තරය</label>
+                    <textarea id="edit-note" rows="2" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm resize-none"></textarea>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="closeEditModal()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold rounded-xl text-xs transition">
+                        අවලංගු කරන්න
+                    </button>
+                    <button type="submit" class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl text-xs shadow-md shadow-emerald-600/20 transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-floppy-disk"></i> වෙනස්කම් Save කරන්න
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-4 mt-8">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-400">
+            කුරුඳු සහ පොල් ව්‍යාපාරික මුල්‍ය පද්ධතිය &bull; All data saved locally on your device.
+        </div>
+    </footer>
+
+    <!-- App Logic & JavaScript -->
+    <script>
+        // Category Definitions for Coconut and Cinnamon Businesses
+        const CATEGORIES = {
+            CINNAMON: {
+                INCOME: [
+                    "කුරුඳු අලෙවිය (Cinnamon Sales)",
+                    "කුරුඳු තෙල් / කුඩු / අතුරු නිෂ්පාදන",
+                    "කුරුඳු ලී / දර අලෙවිය",
+                    "වෙනත් කුරුඳු ආදායම්"
+                ],
+                EXPENSE: [
+                    "කුරුඳු තැළීම / කැපීම කූලි (Peeling Labor)",
+                    "අස්වැන්න නෙලීමේ කුලී",
+                    "ප්‍රවාහන හා ඉන්ධන වියදම්",
+                    "ඇසුරුම් හා පොහොර වියදම්",
+                    "වෙනත් කුරුඳු වියදම්"
+                ]
+            },
+            COCONUT: {
+                INCOME: [
+                    "ගෙඩි පිටින් පොල් අලෙවිය (Full Coconuts)",
+                    "ලෙලි ගැසූ පොල් සහ ලෙලි (Husked Nuts & Husks)",
+                    "කොප්පරා අලෙවිය (Copra)",
+                    "පොල් කටු / අඟුරු අලෙවිය (Charcoal & Shells)",
+                    "වෙනත් පොල් ආදායම්"
+                ],
+                EXPENSE: [
+                    "අමු පොල් මිලදී ගැනීම් (Raw Nuts)",
+                    "ලෙලි ගැසීමේ කූලි (Husking Labor)",
+                    "කොප්පරා වියළීමේ වියදම් (Drying Costs)",
+                    "අඟුරු පුළුස්සීමේ වියදම් (Charcoal burning)",
+                    "ප්‍රවාහන හා ඉන්ධන වියදම්",
+                    "ඇසුරුම් හා අනෙකුත් වියදම්"
+                ]
+            }
+        };
+
+        // Realistic Sri Lankan Initial Sample Data
+        const SAMPLE_TRANSACTIONS = [
+            { id: 1, date: "2026-10-20", business: "CINNAMON", type: "INCOME", category: "කුරුඳු අලෙවිය (Cinnamon Sales)", amount: 385000, quantity: "110 kg", note: "තොග වෙළෙන්දාට පැකට් කල කුරුඳු විකිණීම" },
+            { id: 2, date: "2026-10-21", business: "CINNAMON", type: "EXPENSE", category: "කුරුඳු තැළීම / කැපීම කූලි (Peeling Labor)", amount: 120000, quantity: "110 kg", note: "තැළීමේ කූලි ගෙවීම" },
+            { id: 3, date: "2026-10-22", business: "COCONUT", type: "INCOME", category: "ලෙලි ගැසූ පොල් සහ ලෙලි (Husked Nuts & Husks)", amount: 240000, quantity: "2000 ගෙඩි", note: "ලෙලි ගැසූ පොල් සහ ලෙලි තොගය විකිණීම" },
+            { id: 4, date: "2026-10-23", business: "COCONUT", type: "INCOME", category: "කොප්පරා අලෙවිය (Copra)", amount: 185000, quantity: "450 kg", note: "පළමු ශ්‍රේණියේ කොප්පරා" },
+            { id: 5, date: "2026-10-24", business: "COCONUT", type: "INCOME", category: "පොල් කටු / අඟුරු අලෙවිය (Charcoal & Shells)", amount: 65000, quantity: "350 kg", note: "පොල් අඟුරු විකිණීම" },
+            { id: 6, date: "2026-10-25", business: "COCONUT", type: "EXPENSE", category: "අමු පොල් මිලදී ගැනීම් (Raw Nuts)", amount: 210000, quantity: "3000 ගෙඩි", note: "වත්තෙන් අමු පොල් මිලදී ගැනීම" },
+            { id: 7, date: "2026-10-25", business: "COCONUT", type: "EXPENSE", category: "ලෙලි ගැසීමේ කූලි (Husking Labor)", amount: 18000, quantity: "3000 ගෙඩි", note: "ලෙලි ගසන්නන්ට කූලි ගෙවීම" },
+            { id: 8, date: "2026-10-26", business: "CINNAMON", type: "EXPENSE", category: "ප්‍රවාහන හා ඉන්ධන වියදම්", amount: 14500, quantity: "-", note: "කොළඹට ප්‍රවාහන වියදම" }
+        ];
+
+        // State variables
+        let transactions = [];
+        let activeBusinessFilter = 'ALL'; // ALL, CINNAMON, COCONUT
+        let categoryChartInstance = null;
+        let comparisonChartInstance = null;
+
+        // Initialize application on page load
+        window.onload = function() {
+            document.getElementById('form-date').valueAsDate = new Date();
+            loadTransactions();
+            updateCategoryOptions();
+            renderApp();
+        };
+
+        // Save and Load logic from LocalStorage
+        function loadTransactions() {
+            const stored = localStorage.getItem('cinnamon_coconut_transactions');
+            if (stored) {
+                try {
+                    transactions = JSON.parse(stored);
+                } catch(e) {
+                    transactions = [...SAMPLE_TRANSACTIONS];
+                }
+            } else {
+                transactions = [...SAMPLE_TRANSACTIONS];
+                saveTransactions();
+            }
+        }
+
+        function saveTransactions() {
+            localStorage.setItem('cinnamon_coconut_transactions', JSON.stringify(transactions));
+        }
+
+        function resetToSampleData() {
+            if (confirm("ඔබට සාම්පල දත්ත (Sample Data) නැවත ඇතුළත් කිරීමට අවශ්‍යද?")) {
+                transactions = [...SAMPLE_TRANSACTIONS];
+                saveTransactions();
+                renderApp();
+            }
+        }
+
+        function clearAllData() {
+            if (confirm("සියලුම ගනුදෙනු දත්ත මකා දැමීමට ඔබට විශ්වාසද? මෙම ක්‍රියාව ආපසු හැරවිය නොහැක.")) {
+                transactions = [];
+                saveTransactions();
+                renderApp();
+            }
+        }
+
+        // Form Transaction Type Switcher (INCOME / EXPENSE)
+        function setTransactionType(type) {
+            document.getElementById('form-type').value = type;
+            const incBtn = document.getElementById('type-income-btn');
+            const expBtn = document.getElementById('type-expense-btn');
+            const submitBtn = document.getElementById('form-submit-btn');
+
+            if (type === 'INCOME') {
+                incBtn.className = "px-3 py-1.5 rounded-lg transition bg-emerald-600 text-white shadow-sm";
+                expBtn.className = "px-3 py-1.5 rounded-lg transition text-slate-600 hover:text-slate-900";
+                submitBtn.className = "w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-md shadow-emerald-600/20 transition flex items-center justify-center gap-2";
+                submitBtn.innerHTML = '<i class="fa-solid fa-plus"></i> ආදායම ඇතුළත් කරන්න';
+            } else {
+                expBtn.className = "px-3 py-1.5 rounded-lg transition bg-rose-600 text-white shadow-sm";
+                incBtn.className = "px-3 py-1.5 rounded-lg transition text-slate-600 hover:text-slate-900";
+                submitBtn.className = "w-full py-3 px-4 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-xl shadow-md shadow-rose-600/20 transition flex items-center justify-center gap-2";
+                submitBtn.innerHTML = '<i class="fa-solid fa-minus"></i> වියදම ඇතුළත් කරන්න';
+            }
+
+            updateCategoryOptions();
+        }
+
+        // Update Category Dropdown according to Business & Type
+        function updateCategoryOptions() {
+            const biz = document.getElementById('form-business').value;
+            const type = document.getElementById('form-type').value;
+            const catSelect = document.getElementById('form-category');
+
+            const options = CATEGORIES[biz][type] || [];
+            catSelect.innerHTML = '';
+            
+            options.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.textContent = cat;
+                catSelect.appendChild(opt);
+            });
+        }
+
+        // Form Submit Handler (New Additions)
+        function handleFormSubmit(e) {
+            e.preventDefault();
+
+            const type = document.getElementById('form-type').value;
+            const date = document.getElementById('form-date').value;
+            const business = document.getElementById('form-business').value;
+            const category = document.getElementById('form-category').value;
+            const amount = parseFloat(document.getElementById('form-amount').value);
+            const quantity = document.getElementById('form-quantity').value.trim() || '-';
+            const note = document.getElementById('form-note').value.trim() || '-';
+
+            if (!amount || amount <= 0) {
+                alert("කරුණාකර නිවැරදි මුදලක් ඇතුළත් කරන්න.");
+                return;
+            }
+
+            const newTx = {
+                id: Date.now(),
+                date,
+                business,
+                type,
+                category,
+                amount,
+                quantity,
+                note
+            };
+
+            transactions.unshift(newTx);
+            saveTransactions();
+            renderApp();
+
+            document.getElementById('form-amount').value = '';
+            document.getElementById('form-quantity').value = '';
+            document.getElementById('form-note').value = '';
+        }
+
+        // --- EDIT MODAL LOGIC & FUNCTIONS ---
+
+        function openEditModal(id) {
+            const tx = transactions.find(t => t.id === id);
+            if (!tx) return;
+
+            document.getElementById('edit-id').value = tx.id;
+            document.getElementById('edit-date').value = tx.date;
+            document.getElementById('edit-business').value = tx.business;
+            document.getElementById('edit-amount').value = tx.amount;
+            document.getElementById('edit-quantity').value = tx.quantity === '-' ? '' : tx.quantity;
+            document.getElementById('edit-note').value = tx.note === '-' ? '' : tx.note;
+
+            setEditTransactionType(tx.type);
+            updateEditCategoryOptions();
+            document.getElementById('edit-category').value = tx.category;
+
+            document.getElementById('edit-modal').classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-modal').classList.add('hidden');
+        }
+
+        function setEditTransactionType(type) {
+            document.getElementById('edit-type').value = type;
+            const incBtn = document.getElementById('edit-type-income-btn');
+            const expBtn = document.getElementById('edit-type-expense-btn');
+
+            if (type === 'INCOME') {
+                incBtn.className = "px-3 py-1.5 rounded-lg transition bg-emerald-600 text-white shadow-sm font-semibold";
+                expBtn.className = "px-3 py-1.5 rounded-lg transition text-slate-600 hover:text-slate-900";
+            } else {
+                expBtn.className = "px-3 py-1.5 rounded-lg transition bg-rose-600 text-white shadow-sm font-semibold";
+                incBtn.className = "px-3 py-1.5 rounded-lg transition text-slate-600 hover:text-slate-900";
+            }
+
+            updateEditCategoryOptions();
+        }
+
+        function updateEditCategoryOptions() {
+            const biz = document.getElementById('edit-business').value;
+            const type = document.getElementById('edit-type').value;
+            const catSelect = document.getElementById('edit-category');
+
+            const options = CATEGORIES[biz][type] || [];
+            catSelect.innerHTML = '';
+            
+            options.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.textContent = cat;
+                catSelect.appendChild(opt);
+            });
+        }
+
+        function handleEditSubmit(e) {
+            e.preventDefault();
+
+            const id = parseInt(document.getElementById('edit-id').value);
+            const type = document.getElementById('edit-type').value;
+            const date = document.getElementById('edit-date').value;
+            const business = document.getElementById('edit-business').value;
+            const category = document.getElementById('edit-category').value;
+            const amount = parseFloat(document.getElementById('edit-amount').value);
+            const quantity = document.getElementById('edit-quantity').value.trim() || '-';
+            const note = document.getElementById('edit-note').value.trim() || '-';
+
+            if (!amount || amount <= 0) {
+                alert("කරුණාකර නිවැරදි මුදලක් ඇතුළත් කරන්න.");
+                return;
+            }
+
+            const index = transactions.findIndex(t => t.id === id);
+            if (index !== -1) {
+                transactions[index] = {
+                    id,
+                    date,
+                    business,
+                    type,
+                    category,
+                    amount,
+                    quantity,
+                    note
+                };
+
+                saveTransactions();
+                renderApp();
+                closeEditModal();
+            }
+        }
+
+        // Business Filter Controller
+        function setBusinessFilter(filter) {
+            activeBusinessFilter = filter;
+            
+            const btnAll = document.getElementById('filter-all');
+            const btnCin = document.getElementById('filter-cinnamon');
+            const btnCoc = document.getElementById('filter-coconut');
+            const currentFilterText = document.getElementById('current-filter-text');
+
+            const inactiveStyle = "flex-1 sm:flex-initial px-4 py-2 rounded-xl text-sm font-semibold transition bg-slate-100 text-slate-600 hover:bg-slate-200";
+            btnAll.className = inactiveStyle;
+            btnCin.className = inactiveStyle;
+            btnCoc.className = inactiveStyle;
+
+            if (filter === 'ALL') {
+                btnAll.className = "flex-1 sm:flex-initial px-4 py-2 rounded-xl text-sm font-semibold transition bg-slate-800 text-white shadow-sm";
+                currentFilterText.textContent = "සියලුම ගනුදෙනු";
+            } else if (filter === 'CINNAMON') {
+                btnCin.className = "flex-1 sm:flex-initial px-4 py-2 rounded-xl text-sm font-semibold transition bg-cinnamon-600 text-white shadow-sm";
+                currentFilterText.textContent = "කුරුඳු ව්‍යාපාරය පමණක්";
+            } else if (filter === 'COCONUT') {
+                btnCoc.className = "flex-1 sm:flex-initial px-4 py-2 rounded-xl text-sm font-semibold transition bg-coconut-600 text-white shadow-sm";
+                currentFilterText.textContent = "පොල් සහ උප-නිෂ්පාදන පමණක්";
+            }
+
+            renderApp();
+        }
+
+        // Delete item by ID
+        function deleteTransaction(id) {
+            if (confirm("මෙම ගනුදෙනුව ඉවත් කිරීමට ඔබට විශ්වාසද?")) {
+                transactions = transactions.filter(t => t.id !== id);
+                saveTransactions();
+                renderApp();
+            }
+        }
+
+        // Main Render Engine
+        function renderApp() {
+            const searchKeyword = (document.getElementById('search-input')?.value || '').toLowerCase();
+            const typeFilter = document.getElementById('type-filter')?.value || 'ALL';
+
+            const filtered = transactions.filter(t => {
+                if (activeBusinessFilter !== 'ALL' && t.business !== activeBusinessFilter) return false;
+                if (typeFilter !== 'ALL' && t.type !== typeFilter) return false;
+                if (searchKeyword) {
+                    const matchCat = t.category.toLowerCase().includes(searchKeyword);
+                    const matchNote = t.note.toLowerCase().includes(searchKeyword);
+                    const matchQty = t.quantity.toLowerCase().includes(searchKeyword);
+                    if (!matchCat && !matchNote && !matchQty) return false;
+                }
+                return true;
+            });
+
+            // Calculate KPIs
+            let totalIncome = 0;
+            let totalExpense = 0;
+
+            filtered.forEach(t => {
+                if (t.type === 'INCOME') totalIncome += t.amount;
+                if (t.type === 'EXPENSE') totalExpense += t.amount;
+            });
+
+            const netProfit = totalIncome - totalExpense;
+            const margin = totalIncome > 0 ? ((netProfit / totalIncome) * 100).toFixed(1) : '0.0';
+
+            // Update UI Cards
+            document.getElementById('card-income').textContent = `රු. ${totalIncome.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('card-expense').textContent = `රු. ${totalExpense.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            
+            const profitEl = document.getElementById('card-profit');
+            profitEl.textContent = `රු. ${netProfit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            if (netProfit < 0) {
+                profitEl.className = "text-2xl font-bold text-rose-600 mt-1";
+            } else {
+                profitEl.className = "text-2xl font-bold text-slate-800 mt-1";
+            }
+
+            document.getElementById('card-margin').textContent = `${margin}%`;
+
+            renderTable(filtered);
+            renderCharts(filtered);
+        }
+
+        // Render Table Rows with Edit & Delete Buttons
+        function renderTable(items) {
+            const tbody = document.getElementById('transactions-table-body');
+            const emptyState = document.getElementById('empty-state');
+
+            tbody.innerHTML = '';
+
+            if (items.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            items.forEach(t => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/80 transition border-b border-slate-100";
+
+                const isIncome = t.type === 'INCOME';
+                const amountClass = isIncome ? 'text-emerald-600 font-bold' : 'text-rose-600 font-bold';
+                const typeBadge = isIncome 
+                    ? '<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800">ආදායම්</span>'
+                    : '<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-100 text-rose-800">වියදම්</span>';
+
+                const bizBadge = t.business === 'CINNAMON'
+                    ? '<span class="px-2 py-0.5 rounded-md text-[10px] font-medium bg-cinnamon-50 text-cinnamon-700 border border-cinnamon-100"><i class="fa-solid fa-leaf text-[9px] me-1"></i>කුරුඳු</span>'
+                    : '<span class="px-2 py-0.5 rounded-md text-[10px] font-medium bg-coconut-50 text-coconut-700 border border-coconut-100"><i class="fa-solid fa-utensils text-[9px] me-1"></i>පොල්</span>';
+
+                tr.innerHTML = `
+                    <td class="py-3 px-4 text-slate-500 whitespace-nowrap">${t.date}</td>
+                    <td class="py-3 px-4 whitespace-nowrap">${bizBadge}</td>
+                    <td class="py-3 px-4 font-medium text-slate-700">
+                        <div class="flex items-center gap-1.5">
+                            ${typeBadge}
+                            <span>${t.category}</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-4 text-slate-600">${t.quantity}</td>
+                    <td class="py-3 px-4 text-slate-500 max-w-xs truncate">${t.note}</td>
+                    <td class="py-3 px-4 text-right ${amountClass} whitespace-nowrap">
+                        ${isIncome ? '+' : '-'} රු. ${t.amount.toLocaleString('en-US', {minimumFractionDigits: 2})}
+                    </td>
+                    <td class="py-3 px-4 text-center whitespace-nowrap">
+                        <div class="flex items-center justify-center gap-1">
+                            <button onclick="openEditModal(${t.id})" class="p-1.5 text-slate-400 hover:text-emerald-600 transition rounded-lg hover:bg-emerald-50" title="සංස්කරණය (Edit)">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button onclick="deleteTransaction(${t.id})" class="p-1.5 text-slate-400 hover:text-rose-600 transition rounded-lg hover:bg-rose-50" title="මකන්න (Delete)">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Render Charts using Chart.js
+        function renderCharts(items) {
+            const incomeCategories = {};
+            items.filter(t => t.type === 'INCOME').forEach(t => {
+                const catName = t.category.split('(')[0].trim();
+                incomeCategories[catName] = (incomeCategories[catName] || 0) + t.amount;
+            });
+
+            const catLabels = Object.keys(incomeCategories);
+            const catData = Object.values(incomeCategories);
+
+            const pieColors = [
+                '#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', 
+                '#ec4899', '#14b8a6', '#84cc16', '#6366f1'
+            ];
+
+            const ctxPie = document.getElementById('categoryChart').getContext('2d');
+            if (categoryChartInstance) categoryChartInstance.destroy();
+
+            if (catData.length === 0) {
+                categoryChartInstance = new Chart(ctxPie, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['දත්ත නොමැත'],
+                        datasets: [{ data: [1], backgroundColor: ['#e2e8f0'] }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                });
+            } else {
+                categoryChartInstance = new Chart(ctxPie, {
+                    type: 'doughnut',
+                    data: {
+                        labels: catLabels,
+                        datasets: [{
+                            data: catData,
+                            backgroundColor: pieColors.slice(0, catLabels.length),
+                            borderWidth: 2,
+                            borderColor: '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { boxWidth: 12, font: { size: 11, family: 'Inter' } }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return ` රු. ${context.raw.toLocaleString('en-US')}`;
+                                    }
+                                }
+                            }
+                        },
+                        cutout: '65%'
+                    }
+                });
+            }
+
+            let totalInc = 0;
+            let totalExp = 0;
+            items.forEach(t => {
+                if (t.type === 'INCOME') totalInc += t.amount;
+                if (t.type === 'EXPENSE') totalExp += t.amount;
+            });
+
+            const ctxBar = document.getElementById('comparisonChart').getContext('2d');
+            if (comparisonChartInstance) comparisonChartInstance.destroy();
+
+            comparisonChartInstance = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: ['එකතුව (Total)'],
+                    datasets: [
+                        {
+                            label: 'මුළු ආදායම',
+                            data: [totalInc],
+                            backgroundColor: '#10b981',
+                            borderRadius: 8,
+                            barThickness: 32
+                        },
+                        {
+                            label: 'මුළු වියදම',
+                            data: [totalExp],
+                            backgroundColor: '#f43f5e',
+                            borderRadius: 8,
+                            barThickness: 32
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'රු.' + value.toLocaleString();
+                                },
+                                font: { size: 10 }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ` ${context.dataset.label}: රු. ${context.raw.toLocaleString('en-US')}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
